@@ -29,7 +29,7 @@ a1_mode = st.sidebar.checkbox("Only A1 Setups (Highest Probability)", value=Fals
 
 refresh_sec = st.sidebar.slider("Auto Refresh (seconds)", 20, 60, 30)
 
-# === INDICATOR FUNCTIONS ===
+# === INDICATOR FUNCTIONS (same powerful logic) ===
 def get_data(exchange, symbol, tf, limit=250):
     ohlcv = exchange.fetch_ohlcv(symbol, tf, limit=limit)
     df = pd.DataFrame(ohlcv, columns=['timestamp', 'open', 'high', 'low', 'close', 'volume'])
@@ -61,7 +61,6 @@ def calculate_indicators(df):
     df['bb_width'] = (bb_mid + 2*bb_std - (bb_mid - 2*bb_std)) / bb_mid
     df['bb_expanding'] = df['bb_width'] > df['bb_width'].rolling(20).mean()
     
-    # SuperTrend
     period, mult = 10, 3
     hl2 = (df['high'] + df['low']) / 2
     tr = pd.concat([df['high']-df['low'], abs(df['high']-df['close'].shift()), abs(df['low']-df['close'].shift())], axis=1).max(axis=1)
@@ -127,16 +126,16 @@ try:
         sl = price * (1 - 0.004) if "LONG" in signal else price * (1 + 0.004)
         tp1 = price * (1 + 0.01) if "LONG" in signal else price * (1 - 0.01)
         tp2 = price * (1 + 0.02) if "LONG" in signal else price * (1 - 0.02)
-        st.success(f"**SL**: {sl:,.4f} | **TP1 (50%)**: {tp1:,.4f} | **TP2**: {tp2:,.4f}  ← Use on MEXC 100x")
+        st.success(f"**SL**: {sl:,.4f} | **TP1 (50%)**: {tp1:,.4f} | **TP2**: {tp2:,.4f}")
 
-    # Full Chart
+    # Chart (fixed with new width parameter)
     fig = go.Figure()
     fig.add_trace(go.Candlestick(x=df['timestamp'][-120:], open=df['open'][-120:], high=df['high'][-120:], low=df['low'][-120:], close=df['close'][-120:]))
     fig.add_trace(go.Scatter(x=df['timestamp'][-120:], y=df['ema9'][-120:], name="EMA9", line=dict(color="lime")))
     fig.add_trace(go.Scatter(x=df['timestamp'][-120:], y=df['ema21'][-120:], name="EMA21", line=dict(color="red")))
     fig.add_trace(go.Scatter(x=df['timestamp'][-120:], y=df['supertrend'][-120:], name="SuperTrend", line=dict(color="purple", width=3)))
     fig.update_layout(title=f"{symbol} — {tf_display} — VSI Signal: {signal}", height=650, xaxis_rangeslider_visible=False)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 except Exception as e:
     st.error(f"Error: {str(e)} — Try another symbol or wait 10s.")
